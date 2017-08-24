@@ -1,0 +1,66 @@
+{% load cms_tags sekizai_tags staticfiles %}
+
+{% addtoblock "css" %}
+    <link type="text/css" rel="stylesheet" href="{% static 'onboarding/css/chardinjs.css' %}">
+{% endaddtoblock %}
+{% addtoblock "css" %}
+    <style>
+        .chardinjs-floating {
+            position: absolute;
+            top: 0;
+        }
+    </style>
+{% endaddtoblock %}
+
+{% with instance.child_plugin_instances as items %}
+    <div class="onboarding-container" style="display:none;">
+        <div class="onboarding-floating">
+            {% for child in items %}
+                {% if child.plugin_type == 'TextPlugin' %}
+                    {% render_plugin child %}
+                {% endif %}
+            {% endfor %}
+        </div>
+        {% if request.toolbar.edit_mode %}
+            <div class="onboarding-items">
+                {% for child in items %}
+                    {% if child.plugin_type != 'TextPlugin' %}
+                        {% render_plugin child %}
+                    {% endif %}
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+
+    {% addtoblock "js" %}
+        <script src="{% static 'onboarding/js/chardinjs.min.js' %}"></script>
+    {% endaddtoblock %}
+    {% addtoblock "js" %}
+        <script type="text/javascript">
+            $(document).ready(function() {
+                {% for item in items %}
+                    {% if item.plugin_type != 'TextPlugin' %}
+                        $('{{ item.target }}').attr('data-intro', '{{ item.instruction }}');
+                        $('{{ item.target }}').attr('data-position', '{{ item.tooltip_position }}');
+                    {% endif %}
+                {% endfor %}
+
+                $('body').on('chardinJs:start', function() {
+                    var floating = $('<div class="chardinjs-helper-layer chardinjs-floating"></div>');
+                    $(floating).append($('.onboarding-floating').children());
+                    $('.chardinjs-overlay').after(floating);
+
+                    $('.chardinjs-show-element').click(function() {
+                        $('body').chardinJs('stop');
+                    });
+
+                    $(floating).click(function(e) {
+                        e.preventDefault();
+                        $('body').chardinJs('stop');
+                    });
+                });
+                $('body').chardinJs('start');
+            });
+        </script>
+    {% endaddtoblock %}
+{% endwith %}
